@@ -89,3 +89,12 @@
   .navbar, .footer, .admin-sidebar, .admin-topbar, .btn, .filter-bar { display: none !important; }
   .admin-main { margin-left: 0 !important; }
 }
+
+/* Animasi kartu produk */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.card.card-hidden  { opacity: 0; transform: translateY(20px); }
+.card.card-visible { animation: fadeInUp 0.4s ease forwards; }
