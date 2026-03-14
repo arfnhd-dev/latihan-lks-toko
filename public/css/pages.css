@@ -1,0 +1,91 @@
+/* ============================================================
+   Page-specific styles
+   ============================================================ */
+
+/* ---- Home / Landing ---- */
+.hero { position: relative; overflow: hidden; }
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at center, rgba(255,255,255,0.05) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* ---- Login / Register ---- */
+.auth-wrapper { animation: fadeIn .4s ease; }
+
+/* ---- Admin Dashboard ---- */
+.admin-content .stats-grid { margin-bottom: 2rem; }
+
+/* ---- Keranjang (Cart) ---- */
+.keranjang-summary {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-200);
+  padding: 1.5rem;
+  position: sticky;
+  top: 80px;
+}
+
+/* ---- Checkout ---- */
+.checkout-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+/* ---- Order Detail ---- */
+.order-info-card {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-200);
+  padding: 1.5rem;
+}
+
+/* ---- Product Detail ---- */
+#gambar-produk {
+  transition: transform 0.4s ease;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+/* ---- Animations ---- */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.card { animation: fadeIn .3s ease; }
+
+/* ---- Toast / Flash Message ---- */
+.flash-message {
+  position: fixed;
+  top: 80px;
+  right: 1.5rem;
+  z-index: 9999;
+  min-width: 280px;
+  max-width: 400px;
+  animation: slideInRight .3s ease;
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(100%); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ---- Print ---- */
+@media print {
+  .navbar, .footer, .admin-sidebar, .admin-topbar, .btn, .filter-bar { display: none !important; }
+  .admin-main { margin-left: 0 !important; }
+}
