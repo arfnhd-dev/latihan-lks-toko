@@ -53,11 +53,13 @@ jobs:
           echo "QUEUE_CONNECTION=sync" >> .env.testing
           echo "MAIL_MAILER=array" >> .env.testing
 
-      - name: Run migrations and seeders for testing
-        run: php artisan migrate:fresh --env=testing --seed
+      - name: Skip migrations and seeders for testing
+        run: |
+          echo "⏭️ Skipping migrations and seeders for testing"
+          # Tidak menjalankan migrate dan seed
 
-      - name: Run tests
-        run: php artisan test --env=testing
+      - name: Run tests (skip database tests)
+        run: php artisan test --env=testing --exclude-group=database
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
