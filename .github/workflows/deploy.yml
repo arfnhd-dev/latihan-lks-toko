@@ -54,9 +54,7 @@ jobs:
           echo "MAIL_MAILER=array" >> .env.testing
 
       - name: Run migrations and seeders for testing
-        run: |
-          php artisan migrate --env=testing
-          php artisan db:seed --env=testing
+        run: php artisan migrate:fresh --env=testing --seed
 
       - name: Run tests
         run: php artisan test --env=testing
