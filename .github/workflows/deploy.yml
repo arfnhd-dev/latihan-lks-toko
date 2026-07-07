@@ -3,7 +3,7 @@ name: Deploy Laravel App to Docker Swarm
 on:
   push:
     branches:
-      - Branch_test  # <-- Sesuaikan ke branch tempat Mas Arief bekerja (misal: main, master, atau development)
+      - Branch_test
 
 permissions:
   contents: read
@@ -63,27 +63,20 @@ jobs:
             ${{ env.IMAGE_NAME }}:${{ github.sha }}
             ${{ env.IMAGE_NAME }}:latest
 
-      - name: Deploy via SSH to Docker Swarm
-        uses: appleboy/ssh-action@v1.0.1
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT || 22 }}
-          script: |
-            # 1. Login ke GHCR di dalam VPS 1 Manager agar mendapat izin menarik image terbaru
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-            
-            # 2. Perintahkan Docker Swarm melakukan Rolling Update tanpa downtime ke image versi commit terbaru (${{ github.sha }})
-            docker service update \
-              --image ${{ env.IMAGE_NAME }}:${{ github.sha }} \
-              --with-registry-auth \
-              lks_toko_stack_lks_toko_app
-            
-            # 3. Jalankan migrasi database otomatis secara terpisah di dalam cluster (One-Off Job)
-            # Setelah migrasi selesai, kontainer pembantu ini akan mati otomatis (clean)
-            docker service create --name toko_migration_job_$(date +%s) \
-              --restart-condition none \
-              --network presensievent_presensi_secure_net \
-              ${{ env.IMAGE_NAME }}:${{ github.sha }} \
-              php artisan migrate --force
+      - name: Deploy Directly to Docker Swarm Local
+        run: |
+          # 1. Login ke GHCR langsung di internal VPS 1 agar runner dapat izin download image
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          
+          # 2. Jalankan Rolling Update tanpa downtime ke cluster Swarm
+          docker service update \
+            --image ${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            --with-registry-auth \
+            lks_toko_stack_lks_toko_app
+          
+          # 3. Jalankan migrasi database otomatis via One-Off container
+          docker service create --name toko_migration_job_$(date +%s) \
+            --restart-condition none \
+            --network presensievent_presensi_secure_net \
+            ${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            php artisan migrate --force
