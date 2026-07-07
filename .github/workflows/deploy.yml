@@ -41,8 +41,20 @@ jobs:
       - name: Build frontend assets
         run: npm run build
 
+      - name: Setup testing environment
+        run: |
+          # Generate APP_KEY untuk testing
+          echo "APP_KEY=$(php artisan key:generate --show --no-ansi)" > .env.testing
+          echo "APP_ENV=testing" >> .env.testing
+          echo "DB_CONNECTION=sqlite" >> .env.testing
+          echo "DB_DATABASE=:memory:" >> .env.testing
+          echo "CACHE_DRIVER=array" >> .env.testing
+          echo "SESSION_DRIVER=array" >> .env.testing
+          echo "QUEUE_CONNECTION=sync" >> .env.testing
+          echo "MAIL_MAILER=array" >> .env.testing
+
       - name: Run tests
-        run: php artisan test
+        run: php artisan test --env=testing
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -74,9 +86,22 @@ jobs:
             --with-registry-auth \
             lks_toko_stack_lks_toko_app
           
-          # 3. Jalankan migrasi database otomatis via One-Off container
+          # 3. Jalankan migrasi database otomatis via One-Off container dengan environment production
           docker service create --name toko_migration_job_$(date +%s) \
             --restart-condition none \
             --network presensievent_presensi_secure_net \
+            --env APP_ENV=production \
+            --env APP_KEY=${{ secrets.APP_KEY }} \
+            --env DB_CONNECTION=mysql \
+            --env DB_HOST=172.17.50.58 \
+            --env DB_PORT=3306 \
+            --env DB_DATABASE=${{ secrets.DB_DATABASE }} \
+            --env DB_USERNAME=${{ secrets.DB_USERNAME }} \
+            --env DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+            --env REDIS_HOST=172.17.50.58 \
+            --env REDIS_PORT=6379 \
+            --env CACHE_DRIVER=redis \
+            --env SESSION_DRIVER=redis \
+            --env QUEUE_CONNECTION=redis \
             ${{ env.IMAGE_NAME }}:${{ github.sha }} \
             php artisan migrate --force
