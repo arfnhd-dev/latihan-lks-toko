@@ -33,7 +33,7 @@ jobs:
           node-version: '20'
 
       - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader --ignore-platform-reqs
 
       - name: Install NPM dependencies
         run: npm install
