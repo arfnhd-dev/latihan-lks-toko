@@ -11,6 +11,9 @@ permissions:
 
 env:
   IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/latihan-lks-toko
+  SERVICE_NAME: lks-toko_laravel_app
+  STACK_NAME: lks-toko
+  NETWORK_NAME: lks-toko_presensi_secure_net
 
 jobs:
   build-and-deploy:
@@ -33,7 +36,6 @@ jobs:
           node-version: '20'
 
       - name: Install Composer dependencies
-        # Menambahkan --ignore-platform-reqs untuk menghindari konflik versi PHP dengan composer.lock
         run: composer install --no-interaction --prefer-dist --optimize-autoloader --ignore-platform-reqs
 
       - name: Install NPM dependencies
@@ -42,6 +44,11 @@ jobs:
       - name: Build frontend assets
         run: npm run build
 
+      - name: Create .env file for testing
+        run: |
+          cp .env.example .env || echo "APP_ENV=local" > .env
+          echo "APP_KEY=${{ secrets.APP_KEY }}" >> .env
+          
       - name: Run tests
         env:
           APP_KEY: ${{ secrets.APP_KEY }}
@@ -68,6 +75,8 @@ jobs:
           tags: |
             ${{ env.IMAGE_NAME }}:${{ github.sha }}
             ${{ env.IMAGE_NAME }}:latest
+          build-args: |
+            APP_KEY=${{ secrets.APP_KEY }}
 
       - name: Deploy to Docker Swarm
         run: |
@@ -75,12 +84,30 @@ jobs:
           docker service update \
             --image ${{ env.IMAGE_NAME }}:${{ github.sha }} \
             --with-registry-auth \
-            lks_toko_stack_lks_toko_app
+            --update-parallelism 1 \
+            --update-delay 10s \
+            --update-order start-first \
+            ${{ env.SERVICE_NAME }}
           
-          # 2. Jalankan migrasi database via One-Off container
-          # Nama job unik tiap eksekusi agar tidak bentrok
-          docker service create --name migration_$(date +%s) \
+          # 2. Tunggu sebentar agar service stabil
+          sleep 10
+          
+          # 3. Jalankan migrasi database via task sementara
+          docker service create \
+            --name ${STACK_NAME}_migration_$(date +%s) \
             --restart-condition none \
-            --network presensi_network \
+            --network ${{ env.NETWORK_NAME }} \
             ${{ env.IMAGE_NAME }}:${{ github.sha }} \
-            php artisan migrate --force
+            php artisan migrate --force --no-interaction
+          
+          # 4. Cek status service
+          docker service ps ${{ env.SERVICE_NAME }}
+
+      - name: Verify deployment
+        run: |
+          # Cek apakah service running
+          docker service ps ${{ env.SERVICE_NAME }} --format "table {{.Name}}\t{{.CurrentState}}" | grep -q "Running" || exit 1
+          echo "✅ Service is running!"
+          
+          # Test HTTP
+          curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" http://localhost:8080 || echo "⚠️ Cannot access via localhost"
