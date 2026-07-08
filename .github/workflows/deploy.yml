@@ -129,8 +129,15 @@ jobs:
           echo "=== Service Status ==="
           docker service ps ${{ env.SERVICE_NAME }}
           
-          echo -e "\n=== Health Check ==="
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://${{ env.APP_URL }})
+          echo -e "\n=== Health Check via IP ==="
+          
+          # Ganti dengan IP VPS1 (misal: 192.168.1.100)
+          # Jika tidak tahu, ambil otomatis
+          VPS1_IP=$(hostname -I | awk '{print $1}')
+          echo "VPS1 IP: $VPS1_IP"
+          
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://$VPS1_IP:8080)
+          
           if [ $HTTP_CODE -eq 200 ]; then
             echo "✅ Deployment successful! HTTP: $HTTP_CODE"
           else
