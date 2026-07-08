@@ -60,6 +60,15 @@
 
 .navbar-actions { display: flex; align-items: center; gap: .5rem; }
 
+.theme-toggle {
+  min-width: 92px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+}
+.theme-toggle-icon { font-size: 1rem; }
+
 .cart-badge {
   position: relative;
   display: inline-flex;
@@ -79,6 +88,27 @@
   align-items: center;
   justify-content: center;
   padding: 0 4px;
+}
+
+body[data-theme="dark"] .navbar,
+body[data-theme="dark"] .admin-topbar,
+body[data-theme="dark"] .footer {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+  box-shadow: 0 1px 0 var(--border);
+}
+
+body[data-theme="dark"] .navbar-brand { color: var(--primary); }
+body[data-theme="dark"] .nav-link { color: var(--text-muted); }
+body[data-theme="dark"] .nav-link:hover,
+body[data-theme="dark"] .nav-link.active {
+  background: rgba(79, 70, 229, 0.16);
+  color: var(--primary);
+}
+
+body[data-theme="dark"] .auth-wrapper {
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.2) 0%, var(--bg) 100%);
 }
 
 /* ---- Admin Layout ---- */

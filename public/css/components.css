@@ -68,6 +68,64 @@
 .btn-lg  { padding: .75rem 1.5rem; font-size: var(--text-base); }
 .btn-block { width: 100%; display: flex; }
 
+body[data-theme="dark"] .card,
+body[data-theme="dark"] .stat-card,
+body[data-theme="dark"] .filter-bar,
+body[data-theme="dark"] .table-wrapper,
+body[data-theme="dark"] .keranjang-summary,
+body[data-theme="dark"] .order-info-card,
+body[data-theme="dark"] .auth-card,
+body[data-theme="dark"] .produk-detail-img,
+body[data-theme="dark"] .table thead th,
+body[data-theme="dark"] .pagination .page-link,
+body[data-theme="dark"] .form-control,
+body[data-theme="dark"] .input-prefix,
+body[data-theme="dark"] .file-upload-box {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+body[data-theme="dark"] .card-title,
+body[data-theme="dark"] .stat-value,
+body[data-theme="dark"] .form-label,
+body[data-theme="dark"] .table-header h2,
+body[data-theme="dark"] .filter-group label {
+  color: var(--text);
+}
+
+body[data-theme="dark"] .card-subtitle,
+body[data-theme="dark"] .card-price,
+body[data-theme="dark"] .stat-label,
+body[data-theme="dark"] .form-hint,
+body[data-theme="dark"] .form-control::placeholder {
+  color: var(--text-muted);
+}
+
+body[data-theme="dark"] .table tbody td,
+body[data-theme="dark"] .table tbody tr:hover {
+  border-color: var(--border);
+}
+
+body[data-theme="dark"] .table tbody tr:hover {
+  background: var(--surface-alt);
+}
+
+body[data-theme="dark"] .btn-ghost {
+  color: var(--text);
+  border-color: var(--border);
+}
+
+body[data-theme="dark"] .btn-ghost:hover {
+  background: var(--surface-alt);
+  color: var(--text);
+}
+
+body[data-theme="dark"] .badge-gray {
+  background: var(--surface-alt);
+  color: var(--text-muted);
+}
+
 /* ---- Cards ---- */
 .card {
   background: #fff;

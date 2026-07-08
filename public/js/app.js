@@ -80,6 +80,39 @@ function toggleSidebar() {
   if (sidebar) sidebar.classList.toggle('open');
 }
 
+/* ── Dark Mode ─────────────────────────────────────────── */
+function applyTheme(themeName) {
+  const resolvedTheme = themeName === 'dark' ? 'dark' : 'light';
+  document.body.setAttribute('data-theme', resolvedTheme);
+  document.documentElement.setAttribute('data-theme', resolvedTheme);
+  document.documentElement.style.colorScheme = resolvedTheme;
+
+  const toggle = document.getElementById('theme-toggle');
+  if (toggle) {
+    const icon = toggle.querySelector('.theme-toggle-icon');
+    const label = toggle.querySelector('.theme-toggle-label');
+    toggle.setAttribute('aria-pressed', String(resolvedTheme === 'dark'));
+    if (icon) icon.textContent = resolvedTheme === 'dark' ? '☀️' : '🌙';
+    if (label) label.textContent = resolvedTheme === 'dark' ? 'Light' : 'Dark';
+  }
+
+  try { localStorage.setItem('theme', resolvedTheme); } catch (e) {}
+}
+
+function initTheme() {
+  let preferredTheme = 'light';
+  try {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark' || savedTheme === 'light') {
+      preferredTheme = savedTheme;
+    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      preferredTheme = 'dark';
+    }
+  } catch (e) {}
+
+  applyTheme(preferredTheme);
+}
+
 /* ── Modal ───────────────────────────────────────────────── */
 function bukaModal(id) {
   const modal = document.getElementById(id);
@@ -173,6 +206,16 @@ function konfirmasiHapus(formId, pesan) {
 
 /* ── Flash Message Auto-hide ─────────────────────────────── */
 document.addEventListener('DOMContentLoaded', function() {
+  initTheme();
+
+  const toggle = document.getElementById('theme-toggle');
+  if (toggle) {
+    toggle.addEventListener('click', function() {
+      const currentTheme = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(currentTheme);
+    });
+  }
+
   const alerts = document.querySelectorAll('.alert');
   alerts.forEach(function(alert) {
     setTimeout(function() {

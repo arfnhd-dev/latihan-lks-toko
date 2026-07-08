@@ -21,6 +21,12 @@
 /* ---- Admin Dashboard ---- */
 .admin-content .stats-grid { margin-bottom: 2rem; }
 
+body[data-theme="dark"] .keranjang-summary,
+body[data-theme="dark"] .order-info-card {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
 /* ---- Keranjang (Cart) ---- */
 .keranjang-summary {
   background: #fff;

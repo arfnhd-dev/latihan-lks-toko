@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="{{ asset('css/pages.css') }}">
   @stack('styles')
 </head>
-<body class="page-wrapper">
+<body class="page-wrapper" data-theme="light">
   @include('partials.navbar')
 
   @if(session('success'))

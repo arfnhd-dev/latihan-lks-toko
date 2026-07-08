@@ -8,6 +8,11 @@
     </div>
 
     <div class="navbar-actions">
+      <button type="button" class="btn btn-ghost btn-sm theme-toggle" id="theme-toggle" aria-label="Ubah tema" aria-pressed="false">
+        <span class="theme-toggle-icon">🌙</span>
+        <span class="theme-toggle-label">Dark</span>
+      </button>
+
       @auth
         <a href="{{ route('keranjang.index') }}" class="btn btn-ghost btn-sm cart-badge">
           Keranjang
