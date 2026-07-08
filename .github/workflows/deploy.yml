@@ -14,6 +14,7 @@ env:
   SERVICE_NAME: lks-toko_laravel_app
   DB_HOST: 172.17.50.58
   REDIS_HOST: 172.17.50.58
+  APP_URL: https://toktes.rasibintang.net.id
 
 jobs:
   build-and-deploy:
@@ -87,30 +88,52 @@ jobs:
             APP_KEY=${{ steps.generate_key.outputs.app_key }}
             APP_ENV=production
             APP_DEBUG=false
+            APP_URL=${{ env.APP_URL }}
+            APP_FORCE_HTTPS=true
+            SESSION_SECURE=true
             DB_HOST=${{ env.DB_HOST }}
             REDIS_HOST=${{ env.REDIS_HOST }}
 
       - name: Deploy to Docker Swarm
         run: |
-          # Update service dengan rolling update
           docker service update \
             --image ${{ env.IMAGE_NAME }}:${{ github.sha }} \
             --with-registry-auth \
             --update-parallelism 1 \
             --update-delay 10s \
             --update-order start-first \
+            --update-failure-action rollback \
             ${{ env.SERVICE_NAME }}
 
       - name: Wait for deployment
-        run: sleep 15
+        run: sleep 20
 
-      - name: Run migrations
+      - name: Run migrations and clear cache
         run: |
           CONTAINER_ID=$(docker ps -q -f name=${{ env.SERVICE_NAME }} | head -1)
+          
+          # Migration
           docker exec $CONTAINER_ID php artisan migrate --force || true
           docker exec $CONTAINER_ID php artisan db:seed --force || true
+          
+          # Clear cache di semua container
+          for CONTAINER_ID in $(docker ps -q -f name=${{ env.SERVICE_NAME }}); do
+            docker exec $CONTAINER_ID php artisan config:clear || true
+            docker exec $CONTAINER_ID php artisan cache:clear || true
+            docker exec $CONTAINER_ID php artisan view:clear || true
+            docker exec $CONTAINER_ID php artisan route:clear || true
+          done
 
       - name: Verify deployment
         run: |
+          echo "=== Service Status ==="
           docker service ps ${{ env.SERVICE_NAME }}
-          curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" http://localhost:8080
+          
+          echo -e "\n=== Health Check ==="
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://${{ env.APP_URL }})
+          if [ $HTTP_CODE -eq 200 ]; then
+            echo "✅ Deployment successful! HTTP: $HTTP_CODE"
+          else
+            echo "❌ Deployment failed! HTTP: $HTTP_CODE"
+            exit 1
+          fi

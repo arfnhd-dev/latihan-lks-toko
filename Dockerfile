@@ -1,9 +1,12 @@
 FROM php:8.4-fpm
 
-# Build arguments
+# Build arguments dengan default values
 ARG APP_KEY
 ARG APP_ENV=production
 ARG APP_DEBUG=false
+ARG APP_URL=https://toktes.rasibintang.net.id
+ARG APP_FORCE_HTTPS=true
+ARG SESSION_SECURE=true
 ARG DB_HOST=172.17.50.58
 ARG REDIS_HOST=172.17.50.58
 
@@ -35,12 +38,17 @@ WORKDIR /var/www/html
 # Copy application
 COPY . .
 
-# Create .env file
+# Hapus .env jika ada (biar fresh)
+RUN rm -f .env
+
+# Create .env file dengan semua konfigurasi
 RUN echo "APP_NAME=Laravel" > .env && \
     echo "APP_ENV=${APP_ENV}" >> .env && \
     echo "APP_DEBUG=${APP_DEBUG}" >> .env && \
     echo "APP_KEY=${APP_KEY}" >> .env && \
-    echo "APP_URL=http://localhost" >> .env && \
+    echo "APP_URL=${APP_URL}" >> .env && \
+    echo "APP_FORCE_HTTPS=${APP_FORCE_HTTPS}" >> .env && \
+    echo "SESSION_SECURE=${SESSION_SECURE}" >> .env && \
     echo "DB_CONNECTION=mysql" >> .env && \
     echo "DB_HOST=${DB_HOST}" >> .env && \
     echo "DB_PORT=3306" >> .env && \
@@ -62,16 +70,29 @@ RUN echo "APP_NAME=Laravel" > .env && \
 # Install dependencies
 RUN composer install --no-interaction --optimize-autoloader --no-dev
 
-# Generate APP_KEY
+# Generate APP_KEY (ini akan override yang di .env jika kosong)
 RUN php artisan key:generate --force --no-interaction
 
-# Create directories and set permissions (FIXED)
+# Cache Laravel config untuk production
+RUN php artisan config:cache && \
+    php artisan route:cache && \
+    php artisan view:cache
+
+# Create directories dan set permissions
 RUN mkdir -p storage/framework/sessions \
     && mkdir -p storage/framework/views \
     && mkdir -p storage/framework/cache \
+    && mkdir -p storage/logs \
     && mkdir -p bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD php artisan config:show app.env || exit 1
+
+# Switch to non-root user
+USER www-data
 
 EXPOSE 8000
 
