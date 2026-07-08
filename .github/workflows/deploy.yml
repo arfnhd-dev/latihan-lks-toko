@@ -45,11 +45,11 @@ jobs:
       - name: Run tests
         env:
           APP_KEY: ${{ secrets.APP_KEY }}
-          APP_DEBUG: true           # <--- Tambahkan ini
+          APP_DEBUG: true
           DB_CONNECTION: sqlite
           DB_DATABASE: ':memory:'
         run: |
-          php artisan migrate --force
+          # Jalankan migrasi dan langsung tes tanpa RefreshDatabase yang merusak
           php artisan test
           
       - name: Set up Docker Buildx
