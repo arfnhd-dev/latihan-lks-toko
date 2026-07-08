@@ -4,8 +4,8 @@ FROM php:8.4-fpm
 ARG APP_KEY
 ARG APP_ENV=production
 ARG APP_DEBUG=false
-ARG DB_HOST=172.17.50.58  # IP VPS4
-ARG REDIS_HOST=172.17.50.58  # IP VPS4
+ARG DB_HOST=172.17.50.58
+ARG REDIS_HOST=172.17.50.58
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
@@ -35,7 +35,7 @@ WORKDIR /var/www/html
 # Copy application
 COPY . .
 
-# Create .env file dengan IP VPS4
+# Create .env file
 RUN echo "APP_NAME=Laravel" > .env && \
     echo "APP_ENV=${APP_ENV}" >> .env && \
     echo "APP_DEBUG=${APP_DEBUG}" >> .env && \
@@ -62,17 +62,16 @@ RUN echo "APP_NAME=Laravel" > .env && \
 # Install dependencies
 RUN composer install --no-interaction --optimize-autoloader --no-dev
 
-# Generate APP_KEY jika belum ada
+# Generate APP_KEY
 RUN php artisan key:generate --force --no-interaction
 
-# Cache Laravel config
-RUN php artisan config:cache || true
-RUN php artisan route:cache || true
-RUN php artisan view:cache || true
-
-# Set permissions
-RUN chown -R www-data:www-data storage bootstrap/cache \
-    && chmod -R 775 storage/bootstrap/cache
+# Create directories and set permissions (FIXED)
+RUN mkdir -p storage/framework/sessions \
+    && mkdir -p storage/framework/views \
+    && mkdir -p storage/framework/cache \
+    && mkdir -p bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
 
 EXPOSE 8000
 
