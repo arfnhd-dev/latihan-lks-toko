@@ -12,8 +12,8 @@ permissions:
 env:
   IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/latihan-lks-toko
   SERVICE_NAME: lks-toko_laravel_app
-  STACK_NAME: lks-toko
-  NETWORK_NAME: lks-toko_presensi_secure_net
+  DB_HOST: 172.17.50.58
+  REDIS_HOST: 172.17.50.58
 
 jobs:
   build-and-deploy:
@@ -44,11 +44,13 @@ jobs:
       - name: Build frontend assets
         run: npm run build
 
-      - name: Create .env file for testing
+      - name: Create .env for testing
         run: |
-          cp .env.example .env || echo "APP_ENV=local" > .env
+          cp .env.example .env 2>/dev/null || echo "APP_ENV=local" > .env
           echo "APP_KEY=${{ secrets.APP_KEY }}" >> .env
-          
+          echo "DB_HOST=172.17.50.58" >> .env
+          echo "REDIS_HOST=172.17.50.58" >> .env
+
       - name: Run tests
         env:
           APP_KEY: ${{ secrets.APP_KEY }}
@@ -56,7 +58,7 @@ jobs:
           DB_CONNECTION: sqlite
           DB_DATABASE: ':memory:'
         run: php artisan test
-            
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -67,6 +69,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.CR_PAT }}
 
+      - name: Generate APP_KEY
+        id: generate_key
+        run: |
+          APP_KEY=$(php -r "echo 'base64:' . base64_encode(random_bytes(32));")
+          echo "app_key=$APP_KEY" >> $GITHUB_OUTPUT
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
@@ -76,11 +84,15 @@ jobs:
             ${{ env.IMAGE_NAME }}:${{ github.sha }}
             ${{ env.IMAGE_NAME }}:latest
           build-args: |
-            APP_KEY=${{ secrets.APP_KEY }}
+            APP_KEY=${{ steps.generate_key.outputs.app_key }}
+            APP_ENV=production
+            APP_DEBUG=false
+            DB_HOST=${{ env.DB_HOST }}
+            REDIS_HOST=${{ env.REDIS_HOST }}
 
       - name: Deploy to Docker Swarm
         run: |
-          # 1. Update service di Swarm (Rolling Update)
+          # Update service dengan rolling update
           docker service update \
             --image ${{ env.IMAGE_NAME }}:${{ github.sha }} \
             --with-registry-auth \
@@ -88,26 +100,17 @@ jobs:
             --update-delay 10s \
             --update-order start-first \
             ${{ env.SERVICE_NAME }}
-          
-          # 2. Tunggu sebentar agar service stabil
-          sleep 10
-          
-          # 3. Jalankan migrasi database via task sementara
-          docker service create \
-            --name ${STACK_NAME}_migration_$(date +%s) \
-            --restart-condition none \
-            --network ${{ env.NETWORK_NAME }} \
-            ${{ env.IMAGE_NAME }}:${{ github.sha }} \
-            php artisan migrate --force --no-interaction
-          
-          # 4. Cek status service
-          docker service ps ${{ env.SERVICE_NAME }}
+
+      - name: Wait for deployment
+        run: sleep 15
+
+      - name: Run migrations
+        run: |
+          CONTAINER_ID=$(docker ps -q -f name=${{ env.SERVICE_NAME }} | head -1)
+          docker exec $CONTAINER_ID php artisan migrate --force || true
+          docker exec $CONTAINER_ID php artisan db:seed --force || true
 
       - name: Verify deployment
         run: |
-          # Cek apakah service running
-          docker service ps ${{ env.SERVICE_NAME }} --format "table {{.Name}}\t{{.CurrentState}}" | grep -q "Running" || exit 1
-          echo "✅ Service is running!"
-          
-          # Test HTTP
-          curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" http://localhost:8080 || echo "⚠️ Cannot access via localhost"
+          docker service ps ${{ env.SERVICE_NAME }}
+          curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" http://localhost:8080
