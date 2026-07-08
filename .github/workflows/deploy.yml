@@ -48,10 +48,8 @@ jobs:
           APP_DEBUG: true
           DB_CONNECTION: sqlite
           DB_DATABASE: ':memory:'
-        run: |
-          # Jalankan migrasi dan langsung tes tanpa RefreshDatabase yang merusak
-          php artisan test
-          
+        run: php artisan test
+            
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
