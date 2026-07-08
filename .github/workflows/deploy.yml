@@ -45,12 +45,13 @@ jobs:
       - name: Run tests
         env:
           APP_KEY: ${{ secrets.APP_KEY }}
+          APP_DEBUG: true           # <--- Tambahkan ini
           DB_CONNECTION: sqlite
           DB_DATABASE: ':memory:'
         run: |
           php artisan migrate --force
-          php artisan test --without-exception-handling
-
+          php artisan test
+          
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
