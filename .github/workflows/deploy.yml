@@ -129,16 +129,12 @@ jobs:
           echo "=== Service Status ==="
           docker service ps ${{ env.SERVICE_NAME }}
           
-          echo -e "\n=== Health Check via IP ==="
+          echo -e "\n=== Health Check via Traefik (VPS5) ==="
           
-          # Ganti dengan IP VPS1 (misal: 192.168.1.100)
-          # Jika tidak tahu, ambil otomatis
-          VPS1_IP=$(hostname -I | awk '{print $1}')
-          echo "VPS1 IP: $VPS1_IP"
+          # Health check ke Traefik di VPS5
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://172.17.50.59:80)
           
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://$VPS1_IP:8080)
-          
-          if [ $HTTP_CODE -eq 200 ]; then
+          if [ $HTTP_CODE -eq 200 ] || [ $HTTP_CODE -eq 301 ] || [ $HTTP_CODE -eq 302 ]; then
             echo "✅ Deployment successful! HTTP: $HTTP_CODE"
           else
             echo "❌ Deployment failed! HTTP: $HTTP_CODE"
