@@ -129,10 +129,8 @@ jobs:
           echo "=== Service Status ==="
           docker service ps ${{ env.SERVICE_NAME }}
           
-          echo -e "\n=== Health Check via Traefik (VPS5) ==="
-          
-          # Health check ke Traefik di VPS5
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://172.17.50.59:80)
+          echo -e "\n=== Health Check via Domain ==="
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://toktes.rasibintang.net.id)
           
           if [ $HTTP_CODE -eq 200 ] || [ $HTTP_CODE -eq 301 ] || [ $HTTP_CODE -eq 302 ]; then
             echo "✅ Deployment successful! HTTP: $HTTP_CODE"
